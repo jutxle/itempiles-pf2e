@@ -1,22 +1,26 @@
 // Item Piles' getDocumentTemplates enumerates every registered dataModel and
-// calls schema.getInitialValue() with no parent. Some PF2e subtype schemas
-// have `initial` callbacks that dereference `this.parent.details`, which
-// throws when invoked outside a document context and breaks SettingsApp.
-Hooks.once("setup", () => {
-	for (const type of ["Actor", "Item"]) {
-		const models = CONFIG[type]?.dataModels ?? {};
-		for (const model of Object.values(models)) {
-			const schema = model?.schema;
-			if (!schema || schema.__itempilesPf2eSafe) continue;
-			const original = schema.getInitialValue.bind(schema);
-			schema.getInitialValue = function(...args) {
-				try { return original(...args); }
-				catch { return {}; }
-			};
-			schema.__itempilesPf2eSafe = true;
-		}
+// calls schema.getInitialValue() with no parent context. Some PF2e subtype
+// schemas have `initial` callbacks that dereference `this.parent.details`,
+// which throws and breaks the Item Piles SettingsApp. Patch the relevant
+// schema-field prototypes so any parent-less initial-value call degrades to
+// `{}` instead of propagating the error.
+(() => {
+	const fields = foundry.data?.fields;
+	if (!fields) return;
+	const targets = ["DataModelSchemaField", "SchemaField", "TypeDataField"];
+	for (const name of targets) {
+		const cls = fields[name];
+		const proto = cls?.prototype;
+		if (!proto || proto.__itempilesPf2eSafe) continue;
+		const original = proto.getInitialValue;
+		if (typeof original !== "function") continue;
+		proto.getInitialValue = function(...args) {
+			try { return original.apply(this, args); }
+			catch { return {}; }
+		};
+		proto.__itempilesPf2eSafe = true;
 	}
-});
+})();
 
 Hooks.once("item-piles-ready", async () => {
 
