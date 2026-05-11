@@ -1,3 +1,23 @@
+// Item Piles' getDocumentTemplates enumerates every registered dataModel and
+// calls schema.getInitialValue() with no parent. Some PF2e subtype schemas
+// have `initial` callbacks that dereference `this.parent.details`, which
+// throws when invoked outside a document context and breaks SettingsApp.
+Hooks.once("setup", () => {
+	for (const type of ["Actor", "Item"]) {
+		const models = CONFIG[type]?.dataModels ?? {};
+		for (const model of Object.values(models)) {
+			const schema = model?.schema;
+			if (!schema || schema.__itempilesPf2eSafe) continue;
+			const original = schema.getInitialValue.bind(schema);
+			schema.getInitialValue = function(...args) {
+				try { return original(...args); }
+				catch { return {}; }
+			};
+			schema.__itempilesPf2eSafe = true;
+		}
+	}
+});
+
 Hooks.once("item-piles-ready", async () => {
 
 	const data = {

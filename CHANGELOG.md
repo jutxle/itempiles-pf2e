@@ -1,3 +1,6 @@
+# v1.0.12
+- Fixes SettingsApp crash on PF2e v8 / Foundry v14 caused by parent-less `getInitialValue` calls in Item Piles' document template enumeration.
+
 # v1.0.11
 - Updates compatibility to Foundry VTT v14.
 
