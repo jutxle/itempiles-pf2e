@@ -1,3 +1,6 @@
+# v1.0.11
+- Updates compatibility to Foundry VTT v14.
+
 # v1.0.10
 - Removes redundant Sheet Overrides, should stop warning from popping up when selecting item piles actors.
 
